@@ -1,0 +1,150 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: AWS CloudFormation Template to create 2 EC2 instances in custom VPC
+Parameters:
+  UserName:
+    Type: String
+    Default: ryan
+  SSHPublicKey:
+    Type: String
+    Default: 
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+    ConstraintDescription: must be a valid EC2 instance type.
+
+  TagName:
+    Description: Value of the Name tag for this EC2
+    Type: String
+    Default: Interview
+
+  AMI:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+Resources:
+  SGWEB:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: SSH_WEB
+      GroupDescription: Public access
+      VpcId: 
+      SecurityGroupIngress:
+        - IpProtocol: 
+          FromPort: 
+          ToPort: 
+          CidrIp: 
+
+  SGPrivate:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: SSH_Private
+      GroupDescription: Private access
+      VpcId: 
+      SecurityGroupIngress:
+        - IpProtocol: 
+          FromPort: 
+          ToPort: 
+          CidrIp: 
+
+  EC2PubNetworkInterface:
+    Type: 'AWS::EC2::NetworkInterface'
+    Properties:
+      SubnetId: 
+      GroupSet:
+        - !Ref SGWEB
+
+  EC2PublicInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      NetworkInterfaces:
+        - NetworkInterfaceId: !Ref EC2PubNetworkInterface
+          DeviceIndex: '0'
+      ImageId: !Ref AMI
+      Tags:
+        - 
+          Key: Name
+          Value: !Ref TagName 
+      UserData:
+        Fn::Base64:
+          Fn::Sub:
+            - |
+              #! /bin/bash
+
+              useradd  ${USERNAME} --create-home --shell /bin/bash
+              mkdir /home/${USERNAME}/.ssh
+              echo ${SSHKEY} > /home/${USERNAME}/.ssh/authorized_keys
+
+              chown -R ${USERNAME}.${USERNAME} /home/${USERNAME}/.ssh
+              chmod 700 /home/${USERNAME}/.ssh
+              chmod 600 /home/${USERNAME}/.ssh/authorized_keys
+              echo "${USERNAME}  ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME}
+
+            - USERNAME: !Ref UserName
+              SSHKEY: !Ref SSHPublicKey
+          
+  EC2PrivateInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref AMI
+      NetworkInterfaces:  
+      - AssociatePublicIpAddress: false
+        DeviceIndex: 0
+        SubnetId: 
+        GroupSet:
+        - !Ref SGPrivate
+
+      Tags:
+        - 
+          Key: Name
+          Value: !Ref TagName 
+      UserData:
+        Fn::Base64:
+          Fn::Sub:
+            - |
+              #! /bin/bash
+
+              useradd  ${USERNAME} --create-home --shell /bin/bash
+              mkdir /home/${USERNAME}/.ssh
+              echo ${SSHKEY} > /home/${USERNAME}/.ssh/authorized_keys
+
+              chown -R ${USERNAME}.${USERNAME} /home/${USERNAME}/.ssh
+              chmod 700 /home/${USERNAME}/.ssh
+              chmod 600 /home/${USERNAME}/.ssh/authorized_keys
+              echo "${USERNAME}  ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME}
+              yum install httpd -y 
+              echo "<html> <body > <h1> I am alive! </h1> " > /var/www/html/index.html
+
+              systemctl start httpd
+              systemctl enable httpd
+
+            - USERNAME: !Ref UserName
+              SSHKEY: !Ref SSHPublicKey
+
+Outputs:
+  PrivateInstanceId:
+    Description: InstanceId of the newly created Private EC2 instance
+    Value: !Ref EC2PrivateInstance
+
+  PublicInstanceId:
+    Description: InstanceId of the newly created Public EC2 instance
+    Value: !Ref EC2PublicInstance
+
+  PrivateInstancePrivateIp:
+    Value: !GetAtt 
+      - EC2PrivateInstance
+      - PrivateIp
+  PublicInstancePublicIp:
+    Value: !GetAtt 
+      - EC2PublicInstance
+      - PublicIp
+  PublicvateInstancePrivateIp:
+    Value: !GetAtt 
+      - EC2PublicInstance
+      - PrivateIp
+

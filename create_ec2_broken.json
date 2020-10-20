@@ -1,0 +1,204 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation Template to create 2 EC2 instances in custom VPC",
+    "Parameters": {
+        "UserName": {
+            "Type": "String",
+            "Default": "ryan"
+        },
+        "SSHPublicKey": {
+            "Type": "String",
+            "Default": null
+        },
+        "InstanceType": {
+            "Type": "String",
+            "Default": "t2.micro",
+            "AllowedValues": [
+                "t2.micro",
+                "t2.small",
+                "t2.medium"
+            ],
+            "ConstraintDescription": "must be a valid EC2 instance type."
+        },
+        "TagName": {
+            "Description": "Value of the Name tag for this EC2",
+            "Type": "String",
+            "Default": "Interview"
+        },
+        "AMI": {
+            "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
+            "Default": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+        }
+    },
+    "Resources": {
+        "SGWEB": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupName": "SSH_WEB",
+                "GroupDescription": "Public access",
+                "VpcId": null,
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": null,
+                        "FromPort": null,
+                        "ToPort": null,
+                        "CidrIp": null
+                    }
+                ]
+            }
+        },
+        "SGPrivate": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupName": "SSH_Private",
+                "GroupDescription": "Private access",
+                "VpcId": null,
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": null,
+                        "FromPort": null,
+                        "ToPort": null,
+                        "CidrIp": null
+                    }
+                ]
+            }
+        },
+        "EC2PubNetworkInterface": {
+            "Type": "AWS::EC2::NetworkInterface",
+            "Properties": {
+                "SubnetId": null,
+                "GroupSet": [
+                    {
+                        "Ref": "SGWEB"
+                    }
+                ]
+            }
+        },
+        "EC2PublicInstance": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "NetworkInterfaces": [
+                    {
+                        "NetworkInterfaceId": {
+                            "Ref": "EC2PubNetworkInterface"
+                        },
+                        "DeviceIndex": "0"
+                    }
+                ],
+                "ImageId": {
+                    "Ref": "AMI"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "TagName"
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Sub": [
+                            "#! /bin/bash\n\nuseradd  ${USERNAME} --create-home --shell /bin/bash\nmkdir /home/${USERNAME}/.ssh\necho ${SSHKEY} > /home/${USERNAME}/.ssh/authorized_keys\n\nchown -R ${USERNAME}.${USERNAME} /home/${USERNAME}/.ssh\nchmod 700 /home/${USERNAME}/.ssh\nchmod 600 /home/${USERNAME}/.ssh/authorized_keys\necho \"${USERNAME}  ALL=(ALL) NOPASSWD:ALL\" > /etc/sudoers.d/${USERNAME}\n",
+                            {
+                                "USERNAME": {
+                                    "Ref": "UserName"
+                                },
+                                "SSHKEY": {
+                                    "Ref": "SSHPublicKey"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "EC2PrivateInstance": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "ImageId": {
+                    "Ref": "AMI"
+                },
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": false,
+                        "DeviceIndex": 0,
+                        "SubnetId": null,
+                        "GroupSet": [
+                            {
+                                "Ref": "SGPrivate"
+                            }
+                        ]
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "TagName"
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Sub": [
+                            "#! /bin/bash\n\nuseradd  ${USERNAME} --create-home --shell /bin/bash\nmkdir /home/${USERNAME}/.ssh\necho ${SSHKEY} > /home/${USERNAME}/.ssh/authorized_keys\n\nchown -R ${USERNAME}.${USERNAME} /home/${USERNAME}/.ssh\nchmod 700 /home/${USERNAME}/.ssh\nchmod 600 /home/${USERNAME}/.ssh/authorized_keys\necho \"${USERNAME}  ALL=(ALL) NOPASSWD:ALL\" > /etc/sudoers.d/${USERNAME}\nyum install httpd -y \necho \"<html> <body > <h1> I am alive! </h1> \" > /var/www/html/index.html\n\nsystemctl start httpd\nsystemctl enable httpd\n",
+                            {
+                                "USERNAME": {
+                                    "Ref": "UserName"
+                                },
+                                "SSHKEY": {
+                                    "Ref": "SSHPublicKey"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "PrivateInstanceId": {
+            "Description": "InstanceId of the newly created Private EC2 instance",
+            "Value": {
+                "Ref": "EC2PrivateInstance"
+            }
+        },
+        "PublicInstanceId": {
+            "Description": "InstanceId of the newly created Public EC2 instance",
+            "Value": {
+                "Ref": "EC2PublicInstance"
+            }
+        },
+        "PrivateInstancePrivateIp": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2PrivateInstance",
+                    "PrivateIp"
+                ]
+            }
+        },
+        "PublicInstancePublicIp": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2PublicInstance",
+                    "PublicIp"
+                ]
+            }
+        },
+        "PublicvateInstancePrivateIp": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2PublicInstance",
+                    "PrivateIp"
+                ]
+            }
+        }
+    }
+}
