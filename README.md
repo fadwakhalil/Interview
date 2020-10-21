@@ -16,7 +16,8 @@ EXERCISE 1) Create a custom VPC in us-west-2 region with a public and a private 
         e) SSL Certificates of any kind & PORT 443 configuration not necessary due to time constrai
         Goal considered finished when the website is accessible via web browser
 
-EXERCISE 2) IaC - We have a CloudFormation template in both JSON or YAML formats (your preference) which satisfies the following requirements:
+EXERCISE 2) IaC - We have a CloudFormation template in both JSON or YAML formats (your preference) 
+which satisfies the following requirements:
 
     a) Use the VPC Resources from EXERCISE [1] to launch two AWS Linux EC2 instances:
     You must configure your shell environment to run commands to run cloudformation
@@ -25,8 +26,10 @@ EXERCISE 2) IaC - We have a CloudFormation template in both JSON or YAML formats
       * The second instance is a private instance and should act as an apache http web server.
     
     NOTES: 
-    - You will need to automate the configuration of both instances using userdata in the cloudformation template. The template is broken and has missing details.
-    - If you are on a windows machine, you can attach an IAM role called 'encrypt-at-rest' to an ec2 machine and perform shell environment configurations on that ec2 machine
+    - You will need to automate the configuration of both instances using userdata in the cloudformation template. 
+    The template is broken and has missing details.
+    - If you are on a windows machine, you can attach an IAM role called 'encrypt-at-rest' 
+    to an ec2 machine and perform shell environment configurations on that ec2 machine
 
     b) Create a load balancer that can serve the web page coming from the apache web server in the private subnet.
     c) Proof that it works by showing us the web page in a browser. 
