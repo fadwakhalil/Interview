@@ -46,10 +46,12 @@ which satisfies the following requirements:
     - Check the web page from the browser.
 
 EXERCISE 3) Ansible
+    
     a) SSH into the public instance and do the following:
         We would like you to install ansible(any version), 
         and then configure ansible to run and install a package 
         called 'htop' on the current ec2 machine
+    
     BONUS EXERCISES:
     b) Install the specific version of ansible, ansible version 2.7.5
     c) Access the Ansible playbook, understand what it does and change 
