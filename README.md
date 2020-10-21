@@ -27,12 +27,12 @@ We have a CloudFormation template in both JSON or YAML formats (your preference)
     
     NOTE: You will need to automate the configuration of both instances using userdata in the cloudformation template. The template is broken and has missing details.
 
-   b) Create a load balancer that can serve the web page coming from the apache web server in the private subnet.
-   c) Proof that it works by showing us the web page in a browser. 
-   d) SSH into the bastion to do the following:
+    b) Create a load balancer that can serve the web page coming from the apache web server in the private subnet.
+    c) Proof that it works by showing us the web page in a browser. 
+    d) SSH into the bastion to do the following:
     - install and configure ansible to be able to access the private instance
     - Clone this repo, review and run the playbook in this repository to modify the web page served by the private instance.
-   e) SSH to the private instance to do the following tasks:
+    e) SSH to the private instance to do the following tasks:
     - Check if the web page change has been applied
     - Check the web page from the browser.
     
