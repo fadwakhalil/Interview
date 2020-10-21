@@ -16,8 +16,7 @@ EXERCISE 1) Create a custom VPC in us-west-2 region with a public and a private 
         e) SSL Certificates of any kind & PORT 443 configuration not necessary due to time constrai
         Goal considered finished when the website is accessible via web browser
 
-EXERCISE 2) IaC
-We have a CloudFormation template in both JSON or YAML formats (your preference) which satisfies the following requirements:
+EXERCISE 2) IaC - We have a CloudFormation template in both JSON or YAML formats (your preference) which satisfies the following requirements:
 
     a) Use the VPC Resources from EXERCISE [1] to launch two AWS Linux EC2 instances:
     You must configure your shell environment to run commands to run cloudformation
